@@ -1,0 +1,11 @@
+django
+gunicorn
+python-dotenv
+whitenoise
+graphene-django
+django-cors-headers
+django-mptt
+Pillow
+django-graphql-jwt
+django-graphql-auth
+

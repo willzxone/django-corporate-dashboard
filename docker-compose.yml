@@ -1,28 +1,54 @@
 version: "3.8"
 services:
-  appseed-app:
-    container_name: appseed_app
+  # appseed-app:
+  #   container_name: appseed_app
+  server:
+    container_name: server
+    build:
+      context: ./server
+      dockerfile: /Dockerfile
     restart: always
-    build: .
+    ports:
+      - "8000:8000"
     volumes:
-      - ./:/app
+      - ./server:/server
     networks:
-      - db_network
       - web_network
+    command: >
+      sh -c "python manage.py shell < tools/create_superuser.py && python manage.py makemigrations &&  python manage.py migrate  && gunicorn --config gunicorn-cfg.py --reload --reload-engine=poll core.wsgi"
+  # python manage.py migrate app_name zero
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: client
+    restart: always
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    networks:
+      - web_network
+    depends_on:
+      - server
+    
   nginx:
     container_name: nginx
+    build:
+      context: ./nginx
+      dockerfile: /Dockerfile
     restart: always
-    image: "nginx:latest"
     ports:
-      - "5085:5085"
+      - "80:80"
     volumes:
       - ./nginx:/etc/nginx/conf.d
     networks:
       - web_network
     depends_on:
-      - appseed-app
+      - server
+      
 networks:
-  db_network:
-    driver: bridge
   web_network:
     driver: bridge
